@@ -1,0 +1,9 @@
+# requirements/dev.txt
+-r base.txt
+pytest==7.4.2
+pytest-cov==4.1.0
+black==23.9.1
+flake8==6.1.0
+mypy==1.5.1
+respx==0.20.1
+factory-boy==3.3.0
