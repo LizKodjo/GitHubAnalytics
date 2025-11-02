@@ -1,0 +1,27 @@
+/* src/index.css */
+/* @tailwindcss; */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0d1117;
+  color: #f0f6fc;
+}
+
+.github-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+}
+
+.skill-beginner { background: linear-gradient(135deg, #6e40c9, #8b5cf6); }
+.skill-intermediate { background: linear-gradient(135deg, #1a7f37, #3fb950); }
+.skill-advanced { background: linear-gradient(135deg, #d29922, #daaa3f); }
+.skill-expert { background: linear-gradient(135deg, #ea4aaa, #f778ba); }
