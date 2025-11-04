@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -35,7 +36,7 @@ class AsyncGitHubClient:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
 
         # Try cache first
-        if use_cache:
+        if use_cache and self.cache:
             cached_data = await self.cache.get(cache_key)
             if cached_data:
                 logger.debug(f"Cache hit for {endpoint}")
@@ -43,8 +44,23 @@ class AsyncGitHubClient:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             try:
-                logger.info(f"Fetching from GitHub API: {endpoint}")
+                print(f"🌐 Making request to GitHub API:: {url}")
+                # logger.info(f"Fetching from GitHub API: {endpoint}")
                 response = await client.get(url, headers=self.headers)
+
+                # Check rate limits
+                remaining = int(response.headers.get(
+                    'X-RateLimit-Remaining', 1))
+                limit = int(response.headers.get('X-RateLimit-Limit', 60))
+                print(
+                    f"📊 GitHub API Rate Limits: {remaining}/{remaining} remaining")
+
+                if remaining == 0:
+                    reset_time = int(response.headers.get(
+                        'X-RateLimit-Reset', 0))
+                    wait_time = max(0, reset_time - time.time())
+                    raise Exception(
+                        f"GitHub API rate limit exceeded.  Resets in {wait_time:.0f} seconds")
 
                 # Handle rate limiting
                 if response.status_code == 403 and 'rate limit' in response.text.lower():
@@ -52,14 +68,18 @@ class AsyncGitHubClient:
 
                 if response.status_code == 404:
                     if 'users' in endpoint:
-                        raise UserNotFound(
+                        raise Exception(
                             f"GitHub user not found: {endpoint}")
                     else:
-                        raise GitHubAPIError(f"Resource not found: {endpoint}")
+                        raise Exception(f"Resource not found: {endpoint}")
+
+                if response.status_code == 401:
+                    raise Exception(
+                        "GitHub API authentication failed - check token")
 
                 if response.status_code != 200:
-                    raise GitHubAPIError(
-                        f"API error {response.status_code}: {response.text}")
+                    raise Exception(
+                        f"GitHub API error {response.status_code}: {response.text}")
 
                 data = response.json()
 
@@ -70,9 +90,9 @@ class AsyncGitHubClient:
                 return data
 
             except httpx.TimeoutException:
-                raise GitHubAPIError("Request timeout")
+                raise Exception("GitHub API request timeout")
             except httpx.NetworkError:
-                raise GitHubAPIError("Network error")
+                raise Exception("Network error connecting to GitHub API")
 
     async def get_user_profile(self, username: str) -> Dict[str, Any]:
         return await self._make_request(f"/users/{username}")

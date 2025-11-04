@@ -1,5 +1,5 @@
 # backend/app.py
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_limiter.util import get_remote_address
 from flask_limiter import Limiter
 from flask_cors import CORS
@@ -25,16 +25,22 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = settings.SECRET_KEY
 
+    # CORS
+    CORS(app,
+         oigins=["http://localhost:5173",
+                 "http://127.0.0.1:5173", "http://localhost:3000"],
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "OPTIONS"]
+         )
+
     # Rate limiting
     limiter = Limiter(
         get_remote_address,
         app=app,
-        default_limits=["100 per hour"],
+        default_limits=["200 per day", "50 per hour"],
         storage_uri="memory://"
     )
-
-    # CORS
-    CORS(app)
 
     # Import and register blueprints
     try:
@@ -44,12 +50,24 @@ def create_app():
     except ImportError as e:
         print(f"⚠️  Could not register analytics routes: {e}")
 
+    # Add CORS headers to all responses
+    # @app.after_request
+    # def after_request(response):
+    #     response.headers.add('Access-Control-Allow-Origin',
+    #                          'http://localhost:5173')
+    #     response.headers.add('Access-Control-Allow-Headers',
+    #                          'Content-Type,Authorization')
+    #     response.headers.add('Access-Control-Allow-Methods',
+    #                          'GET,PUT,POST,DELETE,OPTIONS')
+    #     response.headers.add('Access-Control-Allow-Credentials', 'true')
+    #     return response
+
     @app.route('/')
     def home():
         return jsonify({
             "message": "GitHub Analytics Pro API 🚀",
             "version": "1.0.0",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "endpoints": {
                 "health": "/health",
                 "user_analysis": "/api/v1/analytics/profile/<username>",
@@ -58,8 +76,11 @@ def create_app():
         })
 
     @app.route('/health')
+    @limiter.exempt
     def health():
         return jsonify({"status": "healthy", "service": "github-analytics"})
+
+    app.limiter = limiter
 
     return app
 

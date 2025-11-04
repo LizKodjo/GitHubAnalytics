@@ -14,6 +14,10 @@ import LanguageChart from "./components/Charts/LanguageChart";
 import SkillRadar from "./components/Charts/SkillRadar";
 import ActivityChart from "./components/Charts/ActivityChart";
 import StatItem from "./components/Common/StatItem";
+import ComparisonDashboard from "./components/Comparison/ComparisonDashboard";
+import ConnectionTest from "./components/Common/ConnectionTest";
+import ErrorMessage from "./components/Common/ErrorMessage";
+import ErrorBoundary from "./components/Common/ErrorBoundary";
 
 function App() {
   const { userData, loading, error, analyzeUser, clearData } =
@@ -21,10 +25,13 @@ function App() {
   const [currentView, setCurrentView] = useState("overview");
 
   const handleSearch = async (username) => {
+    console.log("🔍 Handle search called with: ", username);
+
     try {
       await analyzeUser(username);
     } catch (error) {
       // Error handled in hook
+      console.log("❌ Search error caught in App:", error);
     }
   };
 
@@ -45,8 +52,12 @@ function App() {
     <>
       <div className="min-h-screen bg-github-dark text-github-text-primary">
         <Header onClear={handleClear} />
+        <ConnectionTest />
 
         <main className="container mx-auto px-4 py-8">
+          {/* Temporary debug info */}
+          {/* <DebugInfo /> */}
+
           {!userData ? (
             <div className="text-center max-w-2xl mx-auto mt-16">
               <div className="flex justify-center mb-6">
@@ -89,19 +100,21 @@ function App() {
             <div className="space-y-6">
               {/* Navigation Tabs */}
               <div className="flex space-x-1 p-1 github-card rounded-lg w-fit">
-                {["overview", "repositories", "analytics"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setCurrentView(tab)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      currentView == tab
-                        ? "bg-primary-600 text-white shadow-lg"
-                        : "text-github-text-secondary hover:text-white hover:bg-github-border"
-                    }`}
-                  >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </button>
-                ))}
+                {["overview", "repositories", "analytics", "comparison"].map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setCurrentView(tab)}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        currentView == tab
+                          ? "bg-primary-600 text-white shadow-lg"
+                          : "text-github-text-secondary hover:text-white hover:bg-github-border"
+                      }`}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  )
+                )}
               </div>
               {/* Content based on current view */}
               {currentView === "overview" && (
@@ -118,7 +131,9 @@ function App() {
               )}
 
               {currentView === "repositories" && (
-                <RepositoryList userData={userData} />
+                <ErrorBoundary>
+                  <RepositoryList userData={userData} />
+                </ErrorBoundary>
               )}
 
               {currentView === "analytics" && (
@@ -142,6 +157,8 @@ function App() {
                   </div>
                 </div>
               )}
+
+              {currentView === "comparison" && <ComparisonDashboard />}
             </div>
           )}
         </main>

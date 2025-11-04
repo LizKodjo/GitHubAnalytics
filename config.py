@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # Security
-    CORS_ORIGINS: list = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: list = ["http://localhost:5173", "http://127.0.0.1:5173"]
     RATE_LIMIT_PER_HOUR: int = int(os.getenv("RATE_LIMIT_PER_HOUR", 100))
 
     # Sentry for error tracking
